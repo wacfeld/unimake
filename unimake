@@ -1,0 +1,58 @@
+#!/usr/bin/python3
+
+# unimake SRCPATH MAKEDIR TMPDIR MODE
+# build SRCPATH using makefile from MAKEDIR in temporary directory TMPDIR, qualified by MODE
+
+import time, os, subprocess, sys, tempfile, shutil
+
+def formatdir(name): # adds '/' to end of dir path if necessary
+    if name.endswith('/'):
+        return name
+    else:
+        return name + '/'
+
+# extract arguments
+srcpath = sys.argv[1] # source file path
+makedir = formatdir(sys.argv[2]) # makefile dir
+tmpdir = formatdir(sys.argv[3]) # temporary dir
+mode = sys.argv[4] # mode
+
+ext = srcpath.split('.')[1] # file extension
+makepath = makedir + ext # makefile path
+
+# check if everything is present
+if not os.path.exists(srcpath) or not os.path.exists(tmpdir) or not os.path.exists(makepath):
+    exit(1)
+
+# create temp dir
+td = tempfile.TemporaryDirectory(dir=tmpdir)
+os.chdir(td.name) # cd to td
+
+# branch
+if mode == 'cont':
+    # copy relevant files into temp dir
+    shutil.copyfile(srcpath, td.name + '/' + '__SRCFILE__') # copy source file
+    shutil.copyfile(makepath, td.name + '/' + 'makefile') # copy makefile
+
+    # run
+    os.system('make cont')
+
+    subprocess.Popen(['make', 'viewcont']) # turns out things like zathura automatically check the file for changes
+
+    while True:
+        # copy relevant files into temp dir
+        shutil.copyfile(srcpath, td.name + '/' + '__SRCFILE__') # copy source file
+        shutil.copyfile(makepath, td.name + '/' + 'makefile') # copy makefile
+
+        # run
+        os.system('make cont')
+        time.sleep(1)
+
+elif mode == 'once':
+    # copy relevant files into temp dir
+    shutil.copyfile(srcpath, td.name + '/' + '__SRCFILE__') # copy source file
+    shutil.copyfile(makepath, td.name + '/' + 'makefile') # copy makefile
+
+    os.system('make once')
+    os.system('make viewonce')
+    
